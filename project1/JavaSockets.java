@@ -4,18 +4,68 @@ import java.nio.*;
 
 public class JavaSockets {
     public static final String HOST = "bicycle.cs.washington.edu";
+    public static DatagramSocket clientSocket;
+    public static InetAddress IPAddress;
+
+    public static Socket tcpSock;
 
     public static void main(String[] args) throws Exception {
 	byte[] stageAres = stageA();
 	//	bytesToHex(stageAres);
-	stageB(stageAres);
+	byte[] bRes = stageB(stageAres);
+	clientSocket.close();
+	byte[] cRes = stageC(bRes);
+	stageD(cRes);
+    }
+
+    public static void stageD(byte[] input) throws Exception {
+	ByteBuffer results = ByteBuffer.allocate(100);
+	results.put(input);
+	int num2 = results.getInt(12);
+	int len2 = results.getInt(16);
+	int secretc = results.getInt(20);
+	byte character = results.get(24);
+	System.out.println("Stage c num2: " + num2);
+	System.out.println("Stage c Secret: " + secretc);
+	System.out.println("Stage c Length: " + len2);
+	ByteBuffer sendData = ByteBuffer.allocate(12 + fourByteAlign(len2));
+	sendData.putInt(len2); // payload_len
+	sendData.putInt(secretc);            // psecret
+	sendData.putShort((short) 1);  // step
+	sendData.putShort((short) 219);// student number
+	for(int i = 0; i < len2; i++) {
+	    sendData.put(i + 12, character);
+	}
+	bytesToHex(sendData.array());
+	for(int i = 0; i < num2; i++) {
+	    sendBytes(sendData.array());
+	}
+	byte[] cres = readBytes(16);
+	bytesToHex(cres);
+    }
+
+    public static byte[] stageC(byte[] input) throws Exception {
+	ByteBuffer results = ByteBuffer.allocate(100);
+	results.put(input);
+	int port = results.getInt(12);
+	int secret = results.getInt(16);
+	System.out.println("Stage c Port: " + port);
+	System.out.println("Stage c Secret: " + secret);
+	ByteBuffer sendData = ByteBuffer.allocate(12);
+	sendData.putInt(0); // payload_len
+	sendData.putInt(secret);            // psecret
+	sendData.putShort((short) 1);  // step
+	sendData.putShort((short) 219);// student number
+	initializeTcpSock(port);
+	sendBytes(sendData.array());
+	byte[] cRes = readBytes(28);
+	bytesToHex(cRes);
+	return cRes;
     }
 
     public static byte[] receiveUDP(int port) throws Exception {
-	DatagramSocket clientSocket = new DatagramSocket();
-	InetAddress IPAddress = InetAddress.getByName(HOST);
 	byte[] receiveData = new byte[100];
-	DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length, IPAddress, port);
+	DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 	while(true) {
 	    try{
 		clientSocket.receive(receivePacket);
@@ -26,17 +76,18 @@ public class JavaSockets {
 	}
     }
 
-    public static initializeSocket(int port) {
-	InetAddress IPAddress = InetAddress.getByName(HOST);
+    public static void initializeTcpSock(int port) throws Exception {
+	tcpSock = new Socket(HOST, port);
+    }
+
+    public static void initializeSocket(int port) throws Exception {
+	IPAddress = InetAddress.getByName(HOST);
 	clientSocket = new DatagramSocket();
 	clientSocket.connect(IPAddress, port);
 	clientSocket.setSoTimeout(1000);
     }
 
     public static byte[] sendUDP(ByteBuffer sendData, int port) throws Exception {
-	InetAddress IPAddress = InetAddress.getByName(HOST);
-	DatagramSocket clientSocket = new DatagramSocket();
-	clientSocket.setSoTimeout(1000);
 	DatagramPacket sendPacket = new DatagramPacket(sendData.array(), sendData.array().length, IPAddress, port);
 	while(true) {
 	    try {
@@ -51,13 +102,14 @@ public class JavaSockets {
 	}
     }
 
-    public static void stageB(byte[] input) throws Exception {
+    public static byte[] stageB(byte[] input) throws Exception {
 	ByteBuffer results = ByteBuffer.allocate(100);
 	results.put(input);
 	int num = results.getInt(12);
 	int len = results.getInt(16);
 	int port = results.getInt(20);
 	int psecret = results.getInt(24);
+	initializeSocket(port);
 	System.out.println("Num: " + num);
 	System.out.println("Len: " + len);
 	System.out.println("Port: " + port);
@@ -75,7 +127,10 @@ public class JavaSockets {
 	    byte[] res = sendUDP(sendData, port);
 	    bytesToHex(res);
 	}
-	receiveUDP(port);
+	System.out.println("Stage B results: ");
+	byte[] stageRes = receiveUDP(port);
+	bytesToHex(stageRes);
+	return stageRes;
     }
 
     public static int fourByteAlign(int num) {
@@ -90,10 +145,29 @@ public class JavaSockets {
 	sendData.putShort((short) 1);  // step
 	sendData.putShort((short) 219);// student number
 	sendData.put(message.getBytes());
+	initializeSocket(12235);
 	return sendUDP(sendData, 12235);
     }
 
+    public static void sendBytes(byte[] bytes) throws IOException {
+	OutputStream out = tcpSock.getOutputStream();
+	DataOutputStream dos = new DataOutputStream(out);
+	dos.write(bytes, 0, bytes.length);
+    }
 
+    public static byte[] readBytes(int len) throws IOException {
+	// Again, probably better to store these objects references in the support class
+	InputStream in = tcpSock.getInputStream();
+	DataInputStream dis = new DataInputStream(in);
+	byte[] data = new byte[len];
+	try {
+	    dis.readFully(data);
+	} catch(Exception e) {
+	    System.out.println(e.toString());
+	    e.printStackTrace();
+	}
+	return data;
+    }
     
     public static void bytesToHex(byte[] bytes) throws Exception {
 	char[] hexArray = "0123456789ABCDEF".toCharArray();
