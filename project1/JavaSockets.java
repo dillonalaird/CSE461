@@ -10,38 +10,38 @@ public class JavaSockets {
     public static Socket tcpSock;
 
     public static void main(String[] args) throws Exception {
-	byte[] stageAres = stageA();
-	//	bytesToHex(stageAres);
-	byte[] bRes = stageB(stageAres);
-	clientSocket.close();
-	byte[] cRes = stageC(bRes);
-	stageD(cRes);
+      byte[] stageAres = stageA();
+      //bytesToHex(stageAres);
+      byte[] bRes = stageB(stageAres);
+      clientSocket.close();
+      byte[] cRes = stageC(bRes);
+      stageD(cRes);
     }
 
     public static void stageD(byte[] input) throws Exception {
-	ByteBuffer results = ByteBuffer.allocate(100);
-	results.put(input);
-	int num2 = results.getInt(12);
-	int len2 = results.getInt(16);
-	int secretc = results.getInt(20);
-	byte character = results.get(24);
-	System.out.println("Stage c num2: " + num2);
-	System.out.println("Stage c Secret: " + secretc);
-	System.out.println("Stage c Length: " + len2);
-	ByteBuffer sendData = ByteBuffer.allocate(12 + fourByteAlign(len2));
-	sendData.putInt(len2); // payload_len
-	sendData.putInt(secretc);            // psecret
-	sendData.putShort((short) 1);  // step
-	sendData.putShort((short) 219);// student number
-	for(int i = 0; i < len2; i++) {
-	    sendData.put(i + 12, character);
-	}
-	bytesToHex(sendData.array());
-	for(int i = 0; i < num2; i++) {
-	    sendBytes(sendData.array());
-	}
-	byte[] cres = readBytes(16);
-	bytesToHex(cres);
+      ByteBuffer results = ByteBuffer.allocate(100);
+      results.put(input);
+      int num2 = results.getInt(12);
+      int len2 = results.getInt(16);
+      int secretc = results.getInt(20);
+      byte character = results.get(24);
+      System.out.println("Stage c num2: " + num2);
+      System.out.println("Stage c Secret: " + secretc);
+      System.out.println("Stage c Length: " + len2);
+      ByteBuffer sendData = ByteBuffer.allocate(12 + fourByteAlign(len2));
+      sendData.putInt(len2);         // payload_len
+      sendData.putInt(secretc);      // psecret
+      sendData.putShort((short) 1);  // step
+      sendData.putShort((short) 219);// student number
+      for(int i = 0; i < len2; i++) {
+          sendData.put(i + 12, character);
+      }
+      for(int i = 0; i < num2; i++) {
+          sendBytes(sendData.array());
+      }
+      //System.out.println("about to read bytes");
+      byte[] cres = readBytes(16);
+      bytesToHex(cres);
     }
 
     public static byte[] stageC(byte[] input) throws Exception {
@@ -150,26 +150,31 @@ public class JavaSockets {
     }
 
     public static void sendBytes(byte[] bytes) throws IOException {
-	OutputStream out = tcpSock.getOutputStream();
-	DataOutputStream dos = new DataOutputStream(out);
-	dos.write(bytes, 0, bytes.length);
+      OutputStream out = tcpSock.getOutputStream();
+      DataOutputStream dos = new DataOutputStream(out);
+      //bytesToHex(bytes);
+      //System.out.println("len = " + bytes.length);
+      dos.write(bytes, 0, bytes.length);
+      dos.flush();
     }
 
     public static byte[] readBytes(int len) throws IOException {
-	// Again, probably better to store these objects references in the support class
-	InputStream in = tcpSock.getInputStream();
-	DataInputStream dis = new DataInputStream(in);
-	byte[] data = new byte[len];
-	try {
-	    dis.readFully(data);
-	} catch(Exception e) {
-	    System.out.println(e.toString());
-	    e.printStackTrace();
-	}
-	return data;
+      //System.out.println("in readBytes");
+      // Again, probably better to store these objects references in the support class
+      InputStream in = tcpSock.getInputStream();
+      DataInputStream dis = new DataInputStream(in);
+      byte[] data = new byte[len];
+      //System.out.println("is connected = " + tcpSock.isConnected());
+      try {
+          dis.readFully(data);
+      } catch(Exception e) {
+          System.out.println(e.toString());
+          e.printStackTrace();
+      }
+      return data;
     }
     
-    public static void bytesToHex(byte[] bytes) throws Exception {
+    public static void bytesToHex(byte[] bytes) {
 	char[] hexArray = "0123456789ABCDEF".toCharArray();
 	char[] hexChars = new char[bytes.length * 2];
 	int v;
