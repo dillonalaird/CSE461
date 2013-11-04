@@ -41,7 +41,12 @@ public class JavaSockets {
       }
       //System.out.println("about to read bytes");
       byte[] cres = readBytes(16);
+      System.out.println("Stage D results:");
       bytesToHex(cres);
+      results = ByteBuffer.allocate(100);
+      results.put(cres);
+      int dSecret = results.getInt(12);
+      System.out.println("Stage d secret: " + dSecret);
     }
 
     public static byte[] stageC(byte[] input) throws Exception {
@@ -49,15 +54,14 @@ public class JavaSockets {
 	results.put(input);
 	int port = results.getInt(12);
 	int secret = results.getInt(16);
-	System.out.println("Stage c Port: " + port);
-	System.out.println("Stage c Secret: " + secret);
+	System.out.println("Stage b Port result: " + port);
+	System.out.println("Stage b Secret: " + secret);
 	ByteBuffer sendData = ByteBuffer.allocate(12);
 	sendData.putInt(0); // payload_len
 	sendData.putInt(secret);            // psecret
 	sendData.putShort((short) 1);  // step
 	sendData.putShort((short) 219);// student number
 	initializeTcpSock(port);
-	sendBytes(sendData.array());
 	byte[] cRes = readBytes(28);
 	bytesToHex(cRes);
 	return cRes;
