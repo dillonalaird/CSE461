@@ -1,11 +1,4 @@
-StageA:
-
-Message received: 
-
-00 00 00 10 00 00 00 00 00 02 00 DB 00 00 00 07 00 00 00 78 00 00 BD 7A 00 00 00 23
-
-Int representations below
-num: 7
-len: 120
-udp_port: 48506
-secretA: 35
+secretA: 69
+secretB: 18
+secretC: 85
+secretD: 25
