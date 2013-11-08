@@ -1,3 +1,9 @@
+Dillon Laird
+Cody Thomas
+Alex Eding
+
+Compile using javac
+
 secretA: 69
 secretB: 18
 secretC: 85
