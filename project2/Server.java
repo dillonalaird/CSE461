@@ -22,10 +22,11 @@ public class Server {
       for(;;) {
         byte[] buf = new byte[100];
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
+        serverSock.receive(packet);
         Thread thread = new Thread(new ServerConnection(serverSock, packet));
         thread.start();
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       System.out.println(e);
       e.printStackTrace();
     }
@@ -53,11 +54,7 @@ public class Server {
     }
 
     private boolean stageA() {
-      try {
-        dSocket.receive(dPacket);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
 
