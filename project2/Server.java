@@ -53,9 +53,14 @@ public class Server {
     }
 
     private boolean stageA() {
+      try {
+        dSocket.receive(dPacket);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
-      System.out.println(new String(p.payload));
+
       if ("hello world".equals(new String(p.payload))
             && pSecret == p.secret)
       {
