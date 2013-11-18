@@ -36,8 +36,11 @@ public class Server {
     private InetAddress ipAddress;
     private DatagramSocket dSocket;
     private DatagramPacket dPacket;
+    private ServerSocket serverSock;
+    private Socket tcpSock;
     private short sid;
-    private int port, len, num, secretA, secretB, secretC, secretD, pSecret = 0;
+    private byte c;
+    private int tcpPort, port, len, num, secretA, secretB, secretC, secretD, pSecret = 0;
 
     ServerConnection(DatagramSocket s, DatagramPacket p) {
       dSocket = s;
@@ -51,20 +54,25 @@ public class Server {
       pSecret = secretA;
       if (!stageB())
         return;
+      pSecret = secretB;
+      if (!stageC())
+        return;
+      pSecret = secretC;
+      if (!stageD())
+        return;
     }
 
     private boolean stageA() {
-
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
       if ("hello world".equals(new String(p.payload).substring(0,11))
             && pSecret == p.secret)
       {
         sid = p.sid;
-        port = randy.nextInt();
-        len = randy.nextInt();
-        num = randy.nextInt();
-        int secretA = randy.nextInt();
+        port = randy.nextInt(49151);
+        len = randy.nextInt(80);
+        num = randy.nextInt(10) + 1;
+        secretA = randy.nextInt();
 
         ByteBuffer buf = ByteBuffer.allocate(16);
         buf.putInt(num);
@@ -79,7 +87,103 @@ public class Server {
     }
 
     private boolean stageB() {
-      return false;
+      try {
+        dSocket = new DatagramSocket(port);
+        //don't ack the first packet.
+        dSocket.receive(dPacket);
+        dSocket.receive(dPacket);
+      } catch (Exception e) {e.printStackTrace();}
+
+      
+      ByteBuffer ackbuf = ByteBuffer.allocate(4);
+      int packetId = 0;
+      while (packetId < num) {
+        try { dSocket.receive(dPacket); } catch (Exception e) {e.printStackTrace();}
+        Packet461 pack = new Packet461(ByteBuffer.wrap(dPacket.getData()));
+        if (verifyPacket(pack, packetId, len + 4, (byte)0)) {
+          if (randy.nextInt(10) > 1) {
+            ackbuf.putInt(0, packetId++);
+            sendUDP(generatePacket((short) 1, ackbuf.array()), dPacket.getPort());
+          }
+        }
+        else {
+          return false;
+        }
+      }
+
+      ByteBuffer buf = ByteBuffer.allocate(8);
+      tcpPort = randy.nextInt(49151);
+      secretB = randy.nextInt();
+
+      buf.putInt(tcpPort);
+      buf.putInt(secretB);
+      sendUDP(generatePacket((short) 1, buf.array()), dPacket.getPort());
+      return true;
+    }
+
+    private boolean verifyPacket(Packet461 pack, int packetId, int expectedLength, byte c) {
+      if (pack.length != expectedLength)
+        return false;
+      if (pack.secret != pSecret)
+        return false;
+      // if (pack.step !=  ??)
+      //   return false
+      ByteBuffer payload = ByteBuffer.wrap(pack.payload);
+      if (packetId > 0) {
+        int packId = payload.getInt();
+        if (packId != packetId)
+          return false;
+      }
+      for (int i = 0; i < len; i++)
+        if (payload.get() != c)
+          return false;
+      return true;
+    }
+
+    private boolean stageC() {
+      try {
+        serverSock = new ServerSocket(tcpPort);
+        serverSock.setSoTimeout(TIMEOUT);
+        tcpSock = serverSock.accept();
+      } catch (Exception e) {e.printStackTrace();}
+
+      ByteBuffer buf = ByteBuffer.allocate(16);
+      len = randy.nextInt(80);
+      num = randy.nextInt(10) + 1;
+      secretC = randy.nextInt();
+      c = (byte) randy.nextInt(256);
+
+      buf.putInt(num);
+      buf.putInt(len);
+      buf.putInt(secretC);
+      buf.put(c);
+      
+
+      try {
+        sendBytes(generatePacket((short) 1, buf.array()));
+      } catch (Exception e) {e.printStackTrace();}
+      return true;
+    }
+
+    private boolean stageD() {
+      Packet461 pack = null;
+      try {
+        for (int i = 0; i < num; i++) {
+          byte[] res = readBytes(fourByteAlign(HEADER_LENGTH + len));
+          pack = new Packet461(ByteBuffer.wrap(res));
+          pack.print();
+          if (!verifyPacket(pack, -1, len, c))
+            i = i;
+            //close connection
+        }
+      } catch (Exception e) {e.printStackTrace();}
+
+      secretD = randy.nextInt();
+      ByteBuffer buf = ByteBuffer.allocate(4);
+
+      buf.putInt(secretD);
+      sendBytes(generatePacket((short) 1, buf.array()));
+      return true;
     }
 
     private byte[] generatePacket(short step, byte[] payload) {
@@ -98,15 +202,38 @@ public class Server {
       bytesToHex(sendData);
       System.out.println("port = " +  port);
       System.out.println("sendPacket addr. = " + sendPacket.getAddress());
-      for (;;) {
-        try {
-          dSocket.send(sendPacket);
-          dSocket.receive(dPacket);
-          return;
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+      try {
+        dSocket.send(sendPacket);
+      } catch (Exception e) {
+        e.printStackTrace();
       }
+    }
+
+    public void sendBytes(byte[] bytes) {
+      try {
+      System.out.println("sending : ");
+      bytesToHex(bytes);
+      OutputStream out = tcpSock.getOutputStream();
+      DataOutputStream dos = new DataOutputStream(out);
+      dos.write(bytes, 0, bytes.length);
+      dos.flush();
+      } catch (Exception e) {e.printStackTrace();}
+    }
+
+    public byte[] readBytes(int len) throws IOException {
+      System.out.println("in readBytes");
+      // Again, probably better to store these objects references in the support class
+      InputStream in = tcpSock.getInputStream();
+      DataInputStream dis = new DataInputStream(in);
+      byte[] data = new byte[len];
+      System.out.println("is connected = " + tcpSock.isConnected());
+      try {
+          dis.readFully(data);
+      } catch(Exception e) {
+          System.out.println(e.toString());
+          e.printStackTrace();
+      }
+      return data;
     }
 
     private class Packet461 {
@@ -123,6 +250,15 @@ public class Server {
         sid = b.getShort();
         payload = new byte[length];
         b.get(payload, 0, length);
+      }
+
+      public void print() {
+        System.out.println(
+          "length: " + length 
+        + "\nsecret: " + secret
+        + "\n step: " + step
+        + "\n sid: " + sid);
+        bytesToHex(payload);
       }
     }
   }
