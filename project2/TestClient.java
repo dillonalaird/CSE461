@@ -4,6 +4,7 @@ import java.nio.*;
 import java.util.Random;
 
 public class TestClient {
+  private static final String HOST = "localhost";
   private static Random rand = new Random();
   private static DatagramSocket udpSocket;
   private static Socket tcpSocket;
@@ -29,7 +30,13 @@ public class TestClient {
   }
 
   public static boolean testStageA() {
-    return false;
+    boolean passed = true;
+    String message = "hello world";
+    ByteBuffer payload = ByteBuffer.allocate(12);
+    payload.put(message.getBytes());
+    passed = checkHeaders(payload, message.length() + 1, 0, (short) 1,
+                          (short) 219, 12235, true);
+    return passed;
   }
 
   public static boolean testStageB() {
@@ -44,6 +51,20 @@ public class TestClient {
     return false;
   }
 
+  private static void initializeUDP(int port) {
+    try {
+      ipAddress = InetAddress.getByName(HOST);
+      udpSocket = new DatagramSocket();
+    } catch (Exception e) { e.printStackTrace(); }
+    udpSocket.connect(ipAddress, port);
+  }
+
+  private static void initializeTCP(int port) {
+    try {
+      tcpSocket = new Socket(HOST, port);
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
   /*
    * If a bad header is sent the connection should be closed immediately, so we can
    * just use one method to check all of this on every step.
@@ -51,48 +72,57 @@ public class TestClient {
   private static boolean checkHeaders(ByteBuffer payload, int payloadlen, int psecret,
                                       short step, short studentID, int port, boolean isUdp) {
     boolean passed = true;
-    ByteBuffer badPayload = malformedPayloadlen(psecret, step, studentID);
-    badPayload.put(payload);
     if (isUdp)
-      if (!sendUDP(badPayload.array(), port)) {
-        System.out.println("FAILED MALFORMED PAYLOAD LENGTH");
-        passed = false;
-      }
+      initializeUDP(port);
     else
-      if (!sendTCP(badPayload.array(), port)) {
-        System.out.println("FAILED MALFORED PAYLOAD LENGTH");
-        passed = false;
-      }
+      initializeTCP(port);
+    ByteBuffer badPayloadlenHeader = malformedPayloadlen(psecret, step, studentID);
+    passed = checkHeadersHelper(badPayloadlenHeader, payload, port, isUdp,
+                                new String("  FAILED MALFORMED PAYLOAD LENGTH"));
 
-    ByteBuffer badPsecret = malformedPsecret(payloadlen, step, studentID);
-    badPsecret.put(payload);
     if (isUdp)
-      if (!sendUDP(badPsecret.array(), port)) {
-        System.out.println("FAILED MALFORMED SECRET");
-        passed = false;
-      }
+      initializeUDP(port);
     else
-      if (!sendTCP(badPsecret.array(), port)) {
-        System.out.println("FAILED MALFORMED SECRET");
-        passed = false;
-      }
+      initializeTCP(port);
+    ByteBuffer badPsecretHeader = malformedPsecret(payloadlen, step, studentID);
+    passed = checkHeadersHelper(badPsecretHeader, payload, port, isUdp,
+                                new String("  FAILED MALFORMED SECRET"));
 
-    ByteBuffer badStep = malformedStep(payloadlen, psecret, studentID);
-    badStep.put(payload);
     if (isUdp)
-      if (!sendUDP(badStep.array(), port)) {
-        System.out.println("FAILED MALFORMED STEP");
+      initializeUDP(port);
+    else
+      initializeTCP(port);
+    ByteBuffer badStepHeader = malformedStep(payloadlen, psecret, studentID);
+    passed = checkHeadersHelper(badStepHeader, payload, port, isUdp,
+                                new String("  FAILED MALFORMED STEP"));
+
+    return passed;
+  }
+
+  private static boolean checkHeadersHelper(ByteBuffer badHeader, ByteBuffer payload,
+                                            int port, boolean isUdp, String errorMessage) {
+    boolean passed = true;
+    ByteBuffer badPacket = ByteBuffer.allocate(payload.capacity() + 12);
+    badPacket.put(badHeader.array());
+    badPacket.put(payload.array());
+    if (isUdp)
+      if (!sendUDP(badPacket.array(), port)) {
+        System.out.println(errorMessage);
         passed = false;
       }
     else
-      if (!sendTCP(badPsecret.array(), port)) {
-        System.out.println("FAILED MALFORMED STEP");
+      if (!sendTCP(badPacket.array(), port)) {
+        System.out.println(errorMessage);
         passed = false;
       }
 
     return passed;
   }
 
+  /*
+   * sendUDP returns true if the connection was closed, which is what should happen
+   * since we're sending malformed headers
+   */
   private static boolean sendUDP(byte[] sendData, int port) {
     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, ipAddress, port);
     try {
@@ -100,7 +130,7 @@ public class TestClient {
     } catch (Exception e) { e.printStackTrace(); }
 
     // connection should close
-    if (udpSocket.isConnected())
+    if (!udpSocket.isConnected())
       return true;
     else
       return false;
