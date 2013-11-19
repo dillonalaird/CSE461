@@ -152,6 +152,8 @@ public class Client {
       sendData.putShort((short) 1);  // step
       sendData.putShort((short) 219);// student number
       sendData.put(message.getBytes());
+      System.out.println("Stage A Message: ");
+      bytesToHex(sendData.array());
       initializeSocket(12235);
       return sendUDP(sendData, 12235);
     }

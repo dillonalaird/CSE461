@@ -105,6 +105,8 @@ public class TestClient {
     ByteBuffer badPacket = ByteBuffer.allocate(payload.capacity() + 12);
     badPacket.put(badHeader.array());
     badPacket.put(payload.array());
+    System.out.println("Malformed Packet: ");
+    bytesToHex(badPacket.array());
     if (isUdp)
       if (!sendUDP(badPacket.array(), port)) {
         System.out.println(errorMessage);
@@ -129,7 +131,13 @@ public class TestClient {
       udpSocket.send(sendPacket);
     } catch (Exception e) { e.printStackTrace(); }
 
+    // wait for server to check everything and disconnect
+    try {
+      Thread.sleep(3000);
+    } catch (Exception e) { e.printStackTrace(); }
+
     // connection should close
+    System.out.println(udpSocket.isConnected());
     if (!udpSocket.isConnected())
       return true;
     else
@@ -171,5 +179,26 @@ public class TestClient {
     header.putShort(step);
     header.putShort(studentID);
     return header;
+  }
+
+  private static void bytesToHex(byte[] bytes) {
+    char[] hexArray = "0123456789ABCDEF".toCharArray();
+    char[] hexChars = new char[bytes.length * 2];
+    int v;
+    for ( int j = 0; j < bytes.length; j++ ) {
+        v = bytes[j] & 0xFF;
+        hexChars[j * 2] = hexArray[v >>> 4];
+        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+    }
+
+    String str = new String(hexChars);
+    for(int i = 0; i < str.length(); i+=2) {
+        System.out.print(str.charAt(i));
+        if(i + 1 < str.length()) {
+          System.out.print(str.charAt(i + 1));
+        }
+        System.out.print(" ");
+    }
+    System.out.println();
   }
 }

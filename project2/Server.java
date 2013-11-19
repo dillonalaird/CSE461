@@ -25,11 +25,11 @@ public class Server {
         serverSock.receive(packet);
         Thread thread = new Thread(new ServerConnection(serverSock, packet));
         thread.start();
+        // if we've returned close the connection
+        if (serverSock.isConnected())
+          serverSock.close();
       }
-    } catch (Exception e) {
-      System.out.println(e);
-      e.printStackTrace();
-    }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
   public class ServerConnection implements Runnable {
@@ -64,9 +64,13 @@ public class Server {
 
     private boolean stageA() {
       System.out.println("=======================Stage A=======================");
+      // payload_len = 12, psecret = 0, step = 1
+      if (!verifyHeader(dPacket.getData(), 12, 0, (short) 1)) return false;
 
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
+      System.out.println("Recieved Message: ");
+      bytesToHex(dPacket.getData());
       if ("hello world".equals(new String(p.payload).substring(0,11))
             && pSecret == p.secret)
       {
@@ -202,8 +206,27 @@ public class Server {
       return true;
     }
 
+   private boolean verifyHeader(byte[] packet, int exPayloadLen, int exPSecret, short exStep) {
+     // extract header
+     ByteBuffer header = ByteBuffer.allocate(12);
+     byte[] subPacket = Arrays.copyOfRange(packet, 0, 12);
+     bytesToHex(subPacket);
+     header.put(subPacket);
+     // need to reset pointer
+     header.rewind();
+     if (header.getInt() != exPayloadLen)
+       return false;
+     if (header.getInt() != exPSecret)
+       return false;
+     if (header.getShort() != exStep)
+       return false;
+
+     return true;
+   }
+
     public void sendUDP(byte[] sendData, int port) {
       DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, ipAddress, port);
+      System.out.println("sendData: ");
       bytesToHex(sendData);
       System.out.println("port = " +  port);
       System.out.println("sendPacket addr. = " + sendPacket.getAddress());
