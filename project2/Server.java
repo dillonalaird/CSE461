@@ -63,6 +63,8 @@ public class Server {
     }
 
     private boolean stageA() {
+      System.out.println("=======================Stage A=======================");
+
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
       if ("hello world".equals(new String(p.payload).substring(0,11))
@@ -87,14 +89,14 @@ public class Server {
     }
 
     private boolean stageB() {
+      System.out.println("=======================Stage B=======================");
+
       try {
         dSocket = new DatagramSocket(port);
         //don't ack the first packet.
         dSocket.receive(dPacket);
-        dSocket.receive(dPacket);
       } catch (Exception e) {e.printStackTrace();}
 
-      
       ByteBuffer ackbuf = ByteBuffer.allocate(4);
       int packetId = 0;
       while (packetId < num) {
@@ -121,26 +123,9 @@ public class Server {
       return true;
     }
 
-    private boolean verifyPacket(Packet461 pack, int packetId, int expectedLength, byte c) {
-      if (pack.length != expectedLength)
-        return false;
-      if (pack.secret != pSecret)
-        return false;
-      // if (pack.step !=  ??)
-      //   return false
-      ByteBuffer payload = ByteBuffer.wrap(pack.payload);
-      if (packetId > 0) {
-        int packId = payload.getInt();
-        if (packId != packetId)
-          return false;
-      }
-      for (int i = 0; i < len; i++)
-        if (payload.get() != c)
-          return false;
-      return true;
-    }
-
     private boolean stageC() {
+      System.out.println("=======================Stage C=======================");
+
       try {
         serverSock = new ServerSocket(tcpPort);
         serverSock.setSoTimeout(TIMEOUT);
@@ -157,7 +142,6 @@ public class Server {
       buf.putInt(len);
       buf.putInt(secretC);
       buf.put(c);
-      
 
       try {
         sendBytes(generatePacket((short) 1, buf.array()));
@@ -166,6 +150,8 @@ public class Server {
     }
 
     private boolean stageD() {
+      System.out.println("=======================Stage D=======================");
+
       Packet461 pack = null;
       try {
         for (int i = 0; i < num; i++) {
@@ -196,7 +182,26 @@ public class Server {
       buf.put(payload);
       return buf.array();
     }
-    
+
+   private boolean verifyPacket(Packet461 pack, int packetId, int expectedLength, byte c) {
+      if (pack.length != expectedLength)
+        return false;
+      if (pack.secret != pSecret)
+        return false;
+      // if (pack.step !=  ??)
+      //   return false
+      ByteBuffer payload = ByteBuffer.wrap(pack.payload);
+      if (packetId > 0) {
+        int packId = payload.getInt();
+        if (packId != packetId)
+          return false;
+      }
+      for (int i = 0; i < len; i++)
+        if (payload.get() != c)
+          return false;
+      return true;
+    }
+
     public void sendUDP(byte[] sendData, int port) {
       DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, ipAddress, port);
       bytesToHex(sendData);
@@ -211,12 +216,12 @@ public class Server {
 
     public void sendBytes(byte[] bytes) {
       try {
-      System.out.println("sending : ");
-      bytesToHex(bytes);
-      OutputStream out = tcpSock.getOutputStream();
-      DataOutputStream dos = new DataOutputStream(out);
-      dos.write(bytes, 0, bytes.length);
-      dos.flush();
+        System.out.println("sending : ");
+        bytesToHex(bytes);
+        OutputStream out = tcpSock.getOutputStream();
+        DataOutputStream dos = new DataOutputStream(out);
+        dos.write(bytes, 0, bytes.length);
+        dos.flush();
       } catch (Exception e) {e.printStackTrace();}
     }
 
@@ -280,7 +285,7 @@ public class Server {
     for(int i = 0; i < str.length(); i+=2) {
         System.out.print(str.charAt(i));
         if(i + 1 < str.length()) {
-      System.out.print(str.charAt(i + 1));
+          System.out.print(str.charAt(i + 1));
         }
         System.out.print(" ");
     }
