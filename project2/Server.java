@@ -55,11 +55,17 @@ public class Server {
       if (!stageB())
         return;
       pSecret = secretB;
-      if (!stageC())
+      if (!stageC()) {
+	serverSock.close();
+	tcpSock.close();
         return;
+      }
       pSecret = secretC;
-      if (!stageD())
-        return;
+      if (!stageD()) {
+	serverSock.close();
+        tcpSock.close();
+	return;
+      }
     }
 
     private boolean stageA() {
@@ -134,7 +140,10 @@ public class Server {
         serverSock = new ServerSocket(tcpPort);
         serverSock.setSoTimeout(TIMEOUT);
         tcpSock = serverSock.accept();
-      } catch (Exception e) {e.printStackTrace();}
+      } catch (Exception e) {
+	  e.printStackTrace();
+	  return false;
+      }
 
       ByteBuffer buf = ByteBuffer.allocate(16);
       len = randy.nextInt(80);
@@ -166,7 +175,10 @@ public class Server {
             i = i;
             //close connection
         }
-      } catch (Exception e) {e.printStackTrace();}
+      } catch (Exception e) {
+	  e.printStackTrace();
+	  return false;
+      }
 
       secretD = randy.nextInt();
       ByteBuffer buf = ByteBuffer.allocate(4);
@@ -188,12 +200,6 @@ public class Server {
     }
 
    private boolean verifyPacket(Packet461 pack, int packetId, int expectedLength, byte c) {
-      if (pack.length != expectedLength)
-        return false;
-      if (pack.secret != pSecret)
-        return false;
-      // if (pack.step !=  ??)
-      //   return false
       ByteBuffer payload = ByteBuffer.wrap(pack.payload);
       if (packetId > 0) {
         int packId = payload.getInt();
@@ -209,6 +215,8 @@ public class Server {
    private boolean verifyHeader(byte[] packet, int exPayloadLen, int exPSecret, short exStep) {
      // extract header
      ByteBuffer header = ByteBuffer.allocate(12);
+     if(packet.length < 12)
+	 return false;
      byte[] subPacket = Arrays.copyOfRange(packet, 0, 12);
      bytesToHex(subPacket);
      header.put(subPacket);
