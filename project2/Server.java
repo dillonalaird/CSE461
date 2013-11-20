@@ -25,9 +25,6 @@ public class Server {
         serverSock.receive(packet);
         Thread thread = new Thread(new ServerConnection(serverSock, packet));
         thread.start();
-        // if we've returned close the connection
-        if (serverSock.isConnected())
-          serverSock.close();
       }
     } catch (Exception e) { e.printStackTrace(); }
   }
@@ -41,6 +38,13 @@ public class Server {
     private short sid;
     private byte c;
     private int tcpPort, port, len, num, secretA, secretB, secretC, secretD, pSecret = 0;
+
+    private void closeTCP() {
+      try {
+      serverSock.close();
+      tcpSock.close();
+      } catch (Exception e) {};
+    }
 
     ServerConnection(DatagramSocket s, DatagramPacket p) {
       dSocket = s;
@@ -56,23 +60,21 @@ public class Server {
         return;
       pSecret = secretB;
       if (!stageC()) {
-	serverSock.close();
-	tcpSock.close();
+        closeTCP();
         return;
       }
       pSecret = secretC;
       if (!stageD()) {
-	serverSock.close();
-        tcpSock.close();
-	return;
+        closeTCP();
+        return;
       }
     }
 
     private boolean stageA() {
       System.out.println("=======================Stage A=======================");
       // payload_len = 12, psecret = 0, step = 1
-      if (!verifyHeader(dPacket.getData(), 12, 0, (short) 1)) return false;
-
+      if (!verifyHeader(dPacket.getData(), 12, (short) 1))
+        return false;
       ipAddress = dPacket.getAddress();
       Packet461 p = new Packet461(ByteBuffer.wrap(dPacket.getData()));
       System.out.println("Recieved Message: ");
@@ -92,7 +94,7 @@ public class Server {
         buf.putInt(port);
         buf.putInt(secretA);
 
-        sendUDP(generatePacket((short) 1, buf.array()), dPacket.getPort());
+        sendUDP(generatePacket((short) 2, buf.array()), dPacket.getPort());
         return true;
       }
       return false;
@@ -104,13 +106,15 @@ public class Server {
       try {
         dSocket = new DatagramSocket(port);
         //don't ack the first packet.
-        dSocket.receive(dPacket);
+        dSocket.receive(dPacket); 
       } catch (Exception e) {e.printStackTrace();}
 
       ByteBuffer ackbuf = ByteBuffer.allocate(4);
       int packetId = 0;
       while (packetId < num) {
         try { dSocket.receive(dPacket); } catch (Exception e) {e.printStackTrace();}
+        if (!verifyHeader(dPacket.getData(), len + 4, (short) 1))
+          return false;
         Packet461 pack = new Packet461(ByteBuffer.wrap(dPacket.getData()));
         if (verifyPacket(pack, packetId, len + 4, (byte)0)) {
           if (randy.nextInt(10) > 1) {
@@ -129,7 +133,11 @@ public class Server {
 
       buf.putInt(tcpPort);
       buf.putInt(secretB);
-      sendUDP(generatePacket((short) 1, buf.array()), dPacket.getPort());
+      try {
+        serverSock = new ServerSocket(tcpPort);
+        serverSock.setSoTimeout(TIMEOUT);
+      } catch(Exception e) {e.printStackTrace(); return false;}
+      sendUDP(generatePacket((short) 2, buf.array()), dPacket.getPort());
       return true;
     }
 
@@ -137,12 +145,11 @@ public class Server {
       System.out.println("=======================Stage C=======================");
 
       try {
-        serverSock = new ServerSocket(tcpPort);
-        serverSock.setSoTimeout(TIMEOUT);
+        System.out.println("tcp Port: " + tcpPort);
         tcpSock = serverSock.accept();
       } catch (Exception e) {
-	  e.printStackTrace();
-	  return false;
+    	  e.printStackTrace();
+    	  return false;
       }
 
       ByteBuffer buf = ByteBuffer.allocate(16);
@@ -157,7 +164,7 @@ public class Server {
       buf.put(c);
 
       try {
-        sendBytes(generatePacket((short) 1, buf.array()));
+        sendBytes(generatePacket((short) 2, buf.array()));
       } catch (Exception e) {e.printStackTrace();}
       return true;
     }
@@ -169,22 +176,23 @@ public class Server {
       try {
         for (int i = 0; i < num; i++) {
           byte[] res = readBytes(fourByteAlign(HEADER_LENGTH + len));
+          if (res == null || !verifyHeader(res, len, (short) 1))
+            return false;
           pack = new Packet461(ByteBuffer.wrap(res));
-          pack.print();
+          // pack.print();
           if (!verifyPacket(pack, -1, len, c))
-            i = i;
-            //close connection
+            return false;
         }
       } catch (Exception e) {
-	  e.printStackTrace();
-	  return false;
+    	  e.printStackTrace();
+    	  return false;
       }
 
       secretD = randy.nextInt();
       ByteBuffer buf = ByteBuffer.allocate(4);
 
       buf.putInt(secretD);
-      sendBytes(generatePacket((short) 1, buf.array()));
+      sendBytes(generatePacket((short) 2, buf.array()));
       return true;
     }
 
@@ -212,23 +220,31 @@ public class Server {
       return true;
     }
 
-   private boolean verifyHeader(byte[] packet, int exPayloadLen, int exPSecret, short exStep) {
+   private boolean verifyHeader(byte[] packet, int exPayloadLen, short exStep) {
      // extract header
      ByteBuffer header = ByteBuffer.allocate(12);
      if(packet.length < 12)
-	 return false;
+	     return false;
+     
+     // System.out.println("packetlength\t" + packet.length);
      byte[] subPacket = Arrays.copyOfRange(packet, 0, 12);
      bytesToHex(subPacket);
      header.put(subPacket);
      // need to reset pointer
      header.rewind();
-     if (header.getInt() != exPayloadLen)
+     
+     int length = header.getInt();
+     // System.out.println("length\t" + length + "\t" + exPayloadLen);
+     if (length != exPayloadLen)
        return false;
-     if (header.getInt() != exPSecret)
+     int secret = header.getInt();
+     // System.out.println("secret\t" + secret + "\t" + pSecret);
+     if (secret != pSecret)
        return false;
-     if (header.getShort() != exStep)
+     short step = header.getShort();
+     // System.out.println("step\t" + step + "\t" + exStep);
+     if (step != exStep)
        return false;
-
      return true;
    }
 
@@ -266,8 +282,7 @@ public class Server {
       try {
           dis.readFully(data);
       } catch(Exception e) {
-          System.out.println(e.toString());
-          e.printStackTrace();
+          return null;
       }
       return data;
     }
