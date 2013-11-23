@@ -94,7 +94,7 @@ public class Server {
         buf.putInt(port);
         buf.putInt(secretA);
 
-        sendUDP(generatePacket((short) 2, buf.array()), dPacket.getPort());
+        sendUDP(generatePacket((short) 2, buf.array(), buf.array().length), dPacket.getPort());
         return true;
       }
       return false;
@@ -119,7 +119,7 @@ public class Server {
         if (verifyPacket(pack, packetId, len + 4, (byte)0)) {
           if (randy.nextInt(10) > 1) {
             ackbuf.putInt(0, packetId++);
-            sendUDP(generatePacket((short) 1, ackbuf.array()), dPacket.getPort());
+            sendUDP(generatePacket((short) 1, ackbuf.array(), ackbuf.array().length), dPacket.getPort());
           }
         }
         else {
@@ -137,7 +137,7 @@ public class Server {
         serverSock = new ServerSocket(tcpPort);
         serverSock.setSoTimeout(TIMEOUT);
       } catch(Exception e) {e.printStackTrace(); return false;}
-      sendUDP(generatePacket((short) 2, buf.array()), dPacket.getPort());
+      sendUDP(generatePacket((short) 2, buf.array(), buf.array().length), dPacket.getPort());
       return true;
     }
 
@@ -164,7 +164,7 @@ public class Server {
       buf.put(c);
 
       try {
-        sendBytes(generatePacket((short) 2, buf.array()));
+	  sendBytes(generatePacket((short) 2, buf.array(), 13));
       } catch (Exception e) {e.printStackTrace();}
       return true;
     }
@@ -192,14 +192,14 @@ public class Server {
       ByteBuffer buf = ByteBuffer.allocate(4);
 
       buf.putInt(secretD);
-      sendBytes(generatePacket((short) 2, buf.array()));
+      sendBytes(generatePacket((short) 2, buf.array(), buf.array().length));
       return true;
     }
 
-    private byte[] generatePacket(short step, byte[] payload) {
-      int len = fourByteAlign(payload.length);
+    private byte[] generatePacket(short step, byte[] payload, int plength) {
+      int len = fourByteAlign(plength);
       ByteBuffer buf = ByteBuffer.allocate(HEADER_LENGTH + len);
-      buf.putInt(len);
+      buf.putInt(plength);
       buf.putInt(pSecret);
       buf.putShort(step);
       buf.putShort(sid);
