@@ -4,9 +4,11 @@ import sys
 
 # Possible addition: Have the control server listen on a port for zombies to add, registers them
 # In a CSV, reads the CSV on attack
+
+# Each zombie registers its address and an open port to send attack to
 ZOMBIES = ["69.91.152.47"]
 PORT = 15000
-TIMEOUT = 10000
+TIMEOUT = 5
 TARGET = "1000.123321.3241"
 TARGET_PORT = 80
 
