@@ -9,7 +9,7 @@ class zombie(SocketServer.BaseRequestHandler):
         self.request.sendall(response)
 
 if __name__ == '__main__':
-    HOST, PORT = 'localhost', 9999
+    HOST, PORT = 'localhost', 15000
 
     server = SocketServer.TCPServer((HOST, PORT), zombie)
     server.serve_forever()
