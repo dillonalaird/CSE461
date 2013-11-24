@@ -1,5 +1,6 @@
 import SocketServer
 import time
+import socket
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
@@ -12,7 +13,8 @@ class zombie(SocketServer.BaseRequestHandler):
         time.sleep(timeout)
 
 if __name__ == '__main__':
-    HOST, PORT = '69.91.152.47', 15000
+    HOST = socket.gethostbyname(socket.gethostname())
+    PORT = 15000
 
     server = SocketServer.TCPServer((HOST, PORT), zombie)
     server.serve_forever()
