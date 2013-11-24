@@ -1,19 +1,15 @@
-import http.server
-import socketserver
+import SocketServer
 
-class MyHandler(BaseHTTPRequestHandler):
-
-    def do_POST(self):
-        print self.headers
-        print self.raw_requestline
+class zombie(SocketServer.BaseRequestHandler):
+    def handle(self):
+        self.data = self.request.recv(1024).strip()
+        print "{} wrote:".format(self.client_address[0])
+        print self.data
+        response = "ACK"
+        self.request.sendall(response)
 
 if __name__ == '__main__':
-    HOST = 'localhost'
-    PORT = 80
+    HOST, PORT = 'localhost', 9999
 
-    httpd = socketserver.TCPServer((HOST, PORT), MyHandler)
-
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        httpd.shutdown()
+    server = SocketServer.TCPServer((HOST, PORT), zombie)
+    server.serve_forever()
