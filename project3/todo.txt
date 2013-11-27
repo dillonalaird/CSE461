@@ -1,0 +1,10 @@
+[Cody, Dillon]
+-set up control and zombie servers and get them communicate with each
+other
+
+-set up the victim server
+
+-set up the dos attack function on the zombie (UDP Flood)
+
+-set up zombie table on server as well as table of ports used to connect
+to each zombie
