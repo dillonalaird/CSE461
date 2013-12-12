@@ -6,7 +6,7 @@ import urllib2
 import random
 import os
 
-N = 10
+N = 100
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
