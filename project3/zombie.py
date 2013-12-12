@@ -37,7 +37,7 @@ class attackHTTPFlood(threading.Thread):
     def __init__(self, timeout, target):
         threading.Thread.__init__(self)
         self.timeoutAttack = timeout
-        self.target = "http://" + target + "/image.jpg"
+        self.target = "http://" + target
 
     def run(self):
         start = time.time()
