@@ -60,7 +60,7 @@ class registerIP(threading.Thread):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.HOST, self.PORT))
             sock.sendall(socket.gethostbyname(socket.gethostname()))
-            time.sleep(5)
+            time.sleep(60)
 
 class waitForInstructions(threading.Thread):
     def __init__(self, HOST, PORT):
