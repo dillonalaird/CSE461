@@ -9,14 +9,14 @@ Step 5: Run control.py to attack
 1.) For our project we created a DoS tool as well as a framework for conducting DDoS attacks. For example you would use this tool to flood a server cutting off others from accessing it.
 
 
-3.) Our model is based on a command/zombie model, where we have a command node who maintains lists of zombie nodes in the network, and issues commands to them.
+2/3.) Our model is based on a command/zombie model, where we have a command node who maintains lists of zombie nodes in the network, and issues commands to them.
 
 There is a registration system, in which zombies send their ip addresses to the command server every so often (set to 60 seconds currently), and the command server stores them with a timestamp in the DB. When it is time to attack, the command server queries for zombies within a specific timerange (to get only active zombies), and sends a TCP message with space-separated tokens, indicating attack type, timeout, number of threads to run it on, etc.
 
 
 We have three types of attacks.
 
-UDP Flood:
+UDP Flood: This attack works by sending 1024 byte packets through UDP to the server over and over. It sends it to whatever port, and doesn't wait for responses. It uses multiple threads to do this as well, using the bandwidth available as best as possible. It ends up flooding all the links on the way to the server, particularly when internal, and every computer that requires links on that route then can't connect to the internet properly. The UDP flood worked really well for us in killing the server.
 
 HTTP GET Flood:
 This is a pretty simple attack which will just spam our apache server with requests for an image. This one just puts a lot of load on the server and hogs all of it's resources since it has to continously serve lots of data. The target computer can still access the network, so the resource we are targeting here seems to be processing power.
