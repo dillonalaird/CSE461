@@ -23,6 +23,8 @@ This is a pretty simple attack which will just spam our apache server with reque
 slowloris attack:
 For this attack, we are targeting an apache server. Apache2 is threadbased and by default has a max thread limit of about 100 threads. Our goal is to tie up all of these threads. To achieve this, we send HTTP requests very slowly by using a socket to send the request one character at a time and sleeping between sends. This allows us to hang onto a thread for a long time -- once all of the threads are used, the server can no longer serve to legitimate users.
 
+All three attacks work well, and accomplish our initial goal of killing the server.
+
 4.) One of the design choices we made was to have the zombies registers their IP addresses with control. The idea here is that control should always have a static IP address which the zombies can always contact, however, the zombies IP addresses will be able to change, so they must register their IP's with control every 5 min or so (this can be set).
 
 Another design choice is to have zombie listen in for commands from control as opposed to contacting control and asking for commands. This is mostly for convenience so we can initiate the attack immediately as opposed to waiting for zombie to contact control every time control wants to initiate an attack.
