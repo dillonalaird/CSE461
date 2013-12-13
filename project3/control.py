@@ -12,7 +12,7 @@ TARGET_PORT = 7
 if len(sys.argv) < 4:
     print
     print "USAGE: {attack type} {target address} {timeout (seconds)} {# threads} {port}"
-    print "Attack types: 'udp', 'http'"
+    print "Attack types: 'udp', 'http', 'syn'"
     print
     sys.exit(0)
 
