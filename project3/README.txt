@@ -18,7 +18,8 @@ We have three types of attacks.
 
 UDP Flood:
 
-HTTP Get Flood:
+HTTP GET Flood:
+This is a pretty simple attack which will just spam our apache server with requests for an image. This one just puts a lot of load on the server and hogs all of it's resources since it has to continously serve lots of data. The target computer can still access the network, so the resource we are targeting here seems to be processing power.
 
 slowloris attack:
 For this attack, we are targeting an apache server. Apache2 is threadbased and by default has a max thread limit of about 100 threads. Our goal is to tie up all of these threads. To achieve this, we send HTTP requests very slowly by using a socket to send the request one character at a time and sleeping between sends. This allows us to hang onto a thread for a long time -- once all of the threads are used, the server can no longer serve to legitimate users.
