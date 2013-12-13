@@ -18,7 +18,7 @@ class register(SocketServer.BaseRequestHandler):
         print "Registering IP: {0}".format(ip)
         with con:
             cur = con.cursor()
-            sec = time.time()
+            sec = int(time.time())
             query = "INSERT OR REPLACE INTO addresses values('{0}', {1})".format(ip, sec)
             cur.execute(query)
         
