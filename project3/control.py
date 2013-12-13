@@ -25,7 +25,7 @@ port = sys.argv[5] if len(sys.argv) > 5 else 7
 con = lite.connect('addresses.db')
 with con:    
     cur = con.cursor()
-    low_time = time.time() - 600
+    low_time = int(time.time() - 10)
     cur.execute("SELECT DISTINCT ip from addresses where 'time' > {0}".format(low_time))
     zombies = cur.fetchall()
     for zombie in zombies:
