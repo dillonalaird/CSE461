@@ -26,10 +26,12 @@ con = lite.connect('addresses.db')
 with con:    
     cur = con.cursor()
     low_time = int(time.time() - 10)
+    print low_time
     cur.execute("SELECT DISTINCT ip from addresses where 'time' > {0}".format(low_time))
     zombies = cur.fetchall()
     for zombie in zombies:
         zombie = zombie[0]
+        print zombie[1]
         i = 0
         while i < 10:
             i = i + 1
